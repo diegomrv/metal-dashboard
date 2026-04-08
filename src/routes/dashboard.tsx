@@ -9,6 +9,7 @@ import { VolumeChart } from "#/components/hevy/volume-chart";
 import { WorkoutFrequency } from "#/components/hevy/workout-frequency";
 import { Button } from "#/components/ui/button";
 import { Skeleton } from "#/components/ui/skeleton";
+import { UserMenu } from "#/components/user-menu";
 import { authClient } from "#/lib/auth-client";
 import { getStoredData, syncHevyData } from "#/lib/hevy/sync";
 import { useApiKey, useHevyData } from "#/lib/hevy/use-hevy-data";
@@ -31,7 +32,7 @@ function HevyDashboard() {
 		if (!session?.user?.id) return;
 		getStoredData({ data: { userId: session.user.id } }).then((stored) => {
 			setLastSyncAt(stored.lastSyncAt);
-		})
+		});
 	}, [session?.user?.id]);
 
 	if (!apiKey) {
@@ -42,7 +43,7 @@ function HevyDashboard() {
 	const handleDisconnect = () => {
 		clearApiKey();
 		navigate({ to: "/connect" });
-	}
+	};
 
 	const handleSync = async () => {
 		if (!session?.user?.id || !apiKey) return;
@@ -50,13 +51,13 @@ function HevyDashboard() {
 		try {
 			await syncHevyData({
 				data: { userId: session.user.id, apiKey },
-			})
+			});
 			setLastSyncAt(new Date().toISOString());
 			await queryClient.invalidateQueries({ queryKey: ["hevy"] });
 		} finally {
 			setSyncing(false);
 		}
-	}
+	};
 
 	if (isError) {
 		return (
@@ -74,7 +75,7 @@ function HevyDashboard() {
 					</Button>
 				</div>
 			</main>
-		)
+		);
 	}
 
 	return (
@@ -89,7 +90,7 @@ function HevyDashboard() {
 					</p>
 				</div>
 				<div className="flex items-center gap-2">
-					{session?.user && (
+					{session?.user ? (
 						<>
 							{lastSyncAt && (
 								<span className="text-xs text-muted-foreground">
@@ -117,11 +118,13 @@ function HevyDashboard() {
 									"Sync"
 								)}
 							</Button>
+							<UserMenu />
 						</>
+					) : (
+						<Button variant="outline" size="sm" onClick={handleDisconnect}>
+							Disconnect
+						</Button>
 					)}
-					<Button variant="outline" size="sm" onClick={handleDisconnect}>
-						Disconnect
-					</Button>
 				</div>
 			</div>
 
@@ -146,7 +149,7 @@ function HevyDashboard() {
 				</div>
 			)}
 		</main>
-	)
+	);
 }
 
 function DashboardSkeleton() {
@@ -165,5 +168,5 @@ function DashboardSkeleton() {
 			<Skeleton className="h-96 rounded-xl" />
 			<Skeleton className="h-64 rounded-xl" />
 		</div>
-	)
+	);
 }
