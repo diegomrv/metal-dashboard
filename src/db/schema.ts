@@ -23,7 +23,7 @@ export const hevyApiKeys = sqliteTable("hevy_api_keys", {
 
 export const hevyWorkouts = sqliteTable("hevy_workouts", {
 	id: integer({ mode: "number" }).primaryKey({ autoIncrement: true }),
-	userId: text("user_id").notNull(),
+	userId: text("user_id"),
 	hevyId: text("hevy_id").notNull(),
 	title: text().notNull(),
 	startTime: text("start_time").notNull(),
@@ -36,7 +36,7 @@ export const hevyWorkouts = sqliteTable("hevy_workouts", {
 
 export const hevyExerciseTemplates = sqliteTable("hevy_exercise_templates", {
 	id: integer({ mode: "number" }).primaryKey({ autoIncrement: true }),
-	userId: text("user_id").notNull(),
+	userId: text("user_id"),
 	hevyId: text("hevy_id").notNull(),
 	title: text().notNull(),
 	type: text().notNull(),
