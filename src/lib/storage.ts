@@ -3,23 +3,16 @@ import * as path from "node:path";
 import { createServerFn } from "@tanstack/react-start";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
-
-function ensureUploadDir() {
-	if (!fs.existsSync(UPLOAD_DIR)) {
-		fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-	}
-}
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 async function saveLocal(fileName: string, buffer: Buffer): Promise<string> {
-	ensureUploadDir();
 	const filePath = path.join(UPLOAD_DIR, fileName);
 	fs.writeFileSync(filePath, buffer);
 	return `/uploads/${fileName}`;
 }
 
 async function saveR2(fileName: string, buffer: Buffer): Promise<string> {
-	// R2 implementation will be added when deploying to Cloudflare
-	// For now, fall back to local
+	// TODO: R2 upload -- falls back to local until Cloudflare deployment
 	return saveLocal(fileName, buffer);
 }
 

@@ -11,7 +11,7 @@ import { Button } from "#/components/ui/button";
 import { Skeleton } from "#/components/ui/skeleton";
 import { UserMenu } from "#/components/user-menu";
 import { authClient } from "#/lib/auth-client";
-import { getStoredData, syncHevyData } from "#/lib/hevy/sync";
+import { getLastSyncAt, syncHevyData } from "#/lib/hevy/sync";
 import { useApiKey, useHevyData } from "#/lib/hevy/use-hevy-data";
 
 export const Route = createFileRoute("/dashboard")({
@@ -30,9 +30,7 @@ function HevyDashboard() {
 
 	useEffect(() => {
 		if (!session?.user?.id) return;
-		getStoredData({ data: { userId: session.user.id } }).then((stored) => {
-			setLastSyncAt(stored.lastSyncAt);
-		});
+		getLastSyncAt({ data: { userId: session.user.id } }).then(setLastSyncAt);
 	}, [session?.user?.id]);
 
 	if (!apiKey) {

@@ -92,6 +92,17 @@ export const syncHevyData = createServerFn({ method: "POST" })
 		return { workouts: workouts.length, templates: templates.length };
 	});
 
+export const getLastSyncAt = createServerFn({ method: "GET" })
+	.inputValidator((input: { userId: string }) => input)
+	.handler(async ({ data }) => {
+		const row = await db
+			.select({ lastSyncAt: hevyApiKeys.lastSyncAt })
+			.from(hevyApiKeys)
+			.where(eq(hevyApiKeys.userId, data.userId))
+			.get();
+		return row?.lastSyncAt?.toISOString() ?? null;
+	});
+
 export const getStoredData = createServerFn({ method: "GET" })
 	.inputValidator((input: { userId: string }) => input)
 	.handler(async ({ data }) => {

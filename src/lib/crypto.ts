@@ -19,6 +19,11 @@ async function importKey(hexKey: string): Promise<CryptoKey> {
 	]);
 }
 
+let _keyPromise: Promise<CryptoKey> | null = null;
+function getCryptoKey(): Promise<CryptoKey> {
+	return (_keyPromise ??= importKey(getEncryptionKey()));
+}
+
 function toBase64(buffer: ArrayBuffer): string {
 	return btoa(String.fromCharCode(...new Uint8Array(buffer)));
 }
@@ -29,7 +34,7 @@ function fromBase64(base64: string): Uint8Array {
 
 /** Encrypts a string using AES-256-GCM. Returns `iv:ciphertext` in base64. */
 export async function encrypt(plaintext: string): Promise<string> {
-	const key = await importKey(getEncryptionKey());
+	const key = await getCryptoKey();
 	const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
 	const encoded = new TextEncoder().encode(plaintext);
 
@@ -44,7 +49,7 @@ export async function encrypt(plaintext: string): Promise<string> {
 
 /** Decrypts an `iv:ciphertext` string produced by `encrypt`. */
 export async function decrypt(encrypted: string): Promise<string> {
-	const key = await importKey(getEncryptionKey());
+	const key = await getCryptoKey();
 	const [ivBase64, ciphertextBase64] = encrypted.split(":");
 	const iv = fromBase64(ivBase64);
 	const ciphertext = fromBase64(ciphertextBase64);

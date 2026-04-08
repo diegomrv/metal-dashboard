@@ -12,17 +12,17 @@ export const auth = betterAuth({
 		deleteUser: {
 			enabled: true,
 			beforeDelete: async (user) => {
-				// Anonymize workout data -- set userId to null
-				await db
-					.update(hevyWorkouts)
-					.set({ userId: null })
-					.where(eq(hevyWorkouts.userId, user.id));
-				await db
-					.update(hevyExerciseTemplates)
-					.set({ userId: null })
-					.where(eq(hevyExerciseTemplates.userId, user.id));
-				// Delete API key (no need to keep it)
-				await db.delete(hevyApiKeys).where(eq(hevyApiKeys.userId, user.id));
+				await Promise.all([
+					db
+						.update(hevyWorkouts)
+						.set({ userId: null })
+						.where(eq(hevyWorkouts.userId, user.id)),
+					db
+						.update(hevyExerciseTemplates)
+						.set({ userId: null })
+						.where(eq(hevyExerciseTemplates.userId, user.id)),
+					db.delete(hevyApiKeys).where(eq(hevyApiKeys.userId, user.id)),
+				]);
 			},
 		},
 		changePassword: {

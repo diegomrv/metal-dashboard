@@ -31,8 +31,6 @@ export const Route = createFileRoute("/profile")({
 	component: ProfilePage,
 });
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
-
 function initials(name: string | null | undefined): string {
 	if (!name) return "?";
 	return name
@@ -42,8 +40,6 @@ function initials(name: string | null | undefined): string {
 		.map((w) => w[0].toUpperCase())
 		.join("");
 }
-
-// ─── Message helpers ─────────────────────────────────────────────────────────
 
 function ErrorMsg({ message }: { message: string }) {
 	return (
@@ -63,15 +59,11 @@ function SuccessMsg({ message }: { message: string }) {
 	);
 }
 
-// ─── Spinner ─────────────────────────────────────────────────────────────────
-
 function Spinner() {
 	return (
 		<span className="h-4 w-4 animate-spin rounded-full border-2 border-current/30 border-t-current" />
 	);
 }
-
-// ─── PersonalInfoCard ─────────────────────────────────────────────────────────
 
 type User = {
 	id: string;
@@ -100,19 +92,27 @@ function PersonalInfoCard({
 
 		setUploadingAvatar(true);
 		try {
-			const reader = new FileReader();
-			reader.onload = async () => {
-				const base64 = (reader.result as string).split(",")[1];
-				const result = await uploadProfileImage({
-					data: { userId: user.id, fileName: file.name, base64 },
-				});
-				setAvatarSrc(result.url);
-				await authClient.updateUser({ image: result.url });
-				onUpdate();
-			};
-			reader.readAsDataURL(file);
+			await new Promise<void>((resolve, reject) => {
+				const reader = new FileReader();
+				reader.onload = async () => {
+					try {
+						const base64 = (reader.result as string).split(",")[1];
+						const result = await uploadProfileImage({
+							data: { userId: user.id, fileName: file.name, base64 },
+						});
+						setAvatarSrc(result.url);
+						await authClient.updateUser({ image: result.url });
+						onUpdate();
+						resolve();
+					} catch (err) {
+						reject(err);
+					}
+				};
+				reader.onerror = () => reject(reader.error);
+				reader.readAsDataURL(file);
+			});
 		} catch {
-			// silently fail avatar upload — not critical
+			// not critical -- avatar upload failure shouldn't block the user
 		} finally {
 			setUploadingAvatar(false);
 		}
@@ -139,7 +139,6 @@ function PersonalInfoCard({
 				<CardDescription>Your name and profile photo</CardDescription>
 			</CardHeader>
 			<CardContent className="grid gap-5">
-				{/* Avatar */}
 				<div className="flex items-center gap-4">
 					<button
 						type="button"
@@ -176,7 +175,6 @@ function PersonalInfoCard({
 					onChange={handleImageChange}
 				/>
 
-				{/* Name */}
 				<div className="grid gap-2">
 					<Label htmlFor="profile-name">Name</Label>
 					<Input
@@ -190,7 +188,6 @@ function PersonalInfoCard({
 					/>
 				</div>
 
-				{/* Email (read-only) */}
 				<div className="grid gap-2">
 					<Label htmlFor="profile-email">Email</Label>
 					<Input id="profile-email" value={user.email} disabled />
@@ -217,8 +214,6 @@ function PersonalInfoCard({
 		</Card>
 	);
 }
-
-// ─── ApiKeyCard ───────────────────────────────────────────────────────────────
 
 function ApiKeyCard({ userId }: { userId: string }) {
 	const [key, setKey] = useState("");
@@ -305,8 +300,6 @@ function ApiKeyCard({ userId }: { userId: string }) {
 		</Card>
 	);
 }
-
-// ─── ChangePasswordCard ───────────────────────────────────────────────────────
 
 function ChangePasswordCard() {
 	const [current, setCurrent] = useState("");
@@ -427,8 +420,6 @@ function ChangePasswordCard() {
 	);
 }
 
-// ─── DangerZoneCard ───────────────────────────────────────────────────────────
-
 function DangerZoneCard() {
 	const navigate = useNavigate();
 	const [password, setPassword] = useState("");
@@ -519,8 +510,6 @@ function DangerZoneCard() {
 		</Card>
 	);
 }
-
-// ─── ProfilePage ──────────────────────────────────────────────────────────────
 
 function ProfilePage() {
 	const navigate = useNavigate();

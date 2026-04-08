@@ -10,17 +10,21 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ConnectRouteImport } from './routes/connect'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as HevyDashboardRouteImport } from './routes/hevy/dashboard'
-import { Route as HevyConnectRouteImport } from './routes/hevy/connect'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -43,16 +47,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const HevyDashboardRoute = HevyDashboardRouteImport.update({
-  id: '/hevy/dashboard',
-  path: '/hevy/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HevyConnectRoute = HevyConnectRouteImport.update({
-  id: '/hevy/connect',
-  path: '/hevy/connect',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -64,9 +58,8 @@ export interface FileRoutesByFullPath {
   '/connect': typeof ConnectRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
-  '/hevy/connect': typeof HevyConnectRoute
-  '/hevy/dashboard': typeof HevyDashboardRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
@@ -74,9 +67,8 @@ export interface FileRoutesByTo {
   '/connect': typeof ConnectRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
-  '/hevy/connect': typeof HevyConnectRoute
-  '/hevy/dashboard': typeof HevyDashboardRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
@@ -85,9 +77,8 @@ export interface FileRoutesById {
   '/connect': typeof ConnectRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
-  '/hevy/connect': typeof HevyConnectRoute
-  '/hevy/dashboard': typeof HevyDashboardRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
@@ -97,9 +88,8 @@ export interface FileRouteTypes {
     | '/connect'
     | '/dashboard'
     | '/login'
+    | '/profile'
     | '/register'
-    | '/hevy/connect'
-    | '/hevy/dashboard'
     | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -107,9 +97,8 @@ export interface FileRouteTypes {
     | '/connect'
     | '/dashboard'
     | '/login'
+    | '/profile'
     | '/register'
-    | '/hevy/connect'
-    | '/hevy/dashboard'
     | '/api/auth/$'
   id:
     | '__root__'
@@ -117,9 +106,8 @@ export interface FileRouteTypes {
     | '/connect'
     | '/dashboard'
     | '/login'
+    | '/profile'
     | '/register'
-    | '/hevy/connect'
-    | '/hevy/dashboard'
     | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
@@ -128,9 +116,8 @@ export interface RootRouteChildren {
   ConnectRoute: typeof ConnectRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  ProfileRoute: typeof ProfileRoute
   RegisterRoute: typeof RegisterRoute
-  HevyConnectRoute: typeof HevyConnectRoute
-  HevyDashboardRoute: typeof HevyDashboardRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
@@ -141,6 +128,13 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -171,20 +165,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/hevy/dashboard': {
-      id: '/hevy/dashboard'
-      path: '/hevy/dashboard'
-      fullPath: '/hevy/dashboard'
-      preLoaderRoute: typeof HevyDashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/hevy/connect': {
-      id: '/hevy/connect'
-      path: '/hevy/connect'
-      fullPath: '/hevy/connect'
-      preLoaderRoute: typeof HevyConnectRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -200,9 +180,8 @@ const rootRouteChildren: RootRouteChildren = {
   ConnectRoute: ConnectRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  ProfileRoute: ProfileRoute,
   RegisterRoute: RegisterRoute,
-  HevyConnectRoute: HevyConnectRoute,
-  HevyDashboardRoute: HevyDashboardRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
