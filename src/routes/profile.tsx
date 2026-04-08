@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import {
 	AlertDialog,
@@ -537,6 +537,12 @@ function ProfilePage() {
 		<main className="min-h-screen px-4 py-12">
 			<div className="mx-auto max-w-lg">
 				<header className="mb-8">
+					<Link
+						to="/dashboard"
+						className="mb-2 inline-block text-sm text-muted-foreground hover:text-foreground"
+					>
+						&larr; Back to dashboard
+					</Link>
 					<h1 className="font-display text-3xl font-semibold tracking-tight">
 						Profile
 					</h1>
