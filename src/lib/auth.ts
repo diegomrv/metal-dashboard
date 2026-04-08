@@ -22,9 +22,7 @@ export const auth = betterAuth({
 					.set({ userId: null })
 					.where(eq(hevyExerciseTemplates.userId, user.id));
 				// Delete API key (no need to keep it)
-				await db
-					.delete(hevyApiKeys)
-					.where(eq(hevyApiKeys.userId, user.id));
+				await db.delete(hevyApiKeys).where(eq(hevyApiKeys.userId, user.id));
 			},
 		},
 		changePassword: {

@@ -43,16 +43,16 @@ function HevyConnect() {
 		} catch {
 			setError(
 				"Invalid API key or Hevy API is unavailable. Make sure you have Hevy Pro.",
-			)
+			);
 		} finally {
 			setLoading(false);
 		}
-	}
+	};
 
 	const handleLoadDashboard = () => {
 		setApiKey(key.trim());
 		navigate({ to: "/dashboard" });
-	}
+	};
 
 	const handleSaveAndSync = async () => {
 		if (!session?.user?.id) return;
@@ -63,10 +63,10 @@ function HevyConnect() {
 		try {
 			await saveApiKey({
 				data: { userId: session.user.id, apiKey: key.trim() },
-			})
+			});
 			await syncHevyData({
 				data: { userId: session.user.id, apiKey: key.trim() },
-			})
+			});
 			setApiKey(key.trim());
 			navigate({ to: "/dashboard" });
 		} catch {
@@ -74,7 +74,7 @@ function HevyConnect() {
 		} finally {
 			setSyncing(false);
 		}
-	}
+	};
 
 	return (
 		<main className="flex min-h-screen items-center justify-center px-4">
@@ -107,9 +107,9 @@ function HevyConnect() {
 								placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 								value={key}
 								onChange={(e) => {
-									setKey(e.target.value)
-									setValidated(null)
-									setError("")
+									setKey(e.target.value);
+									setValidated(null);
+									setError("");
 								}}
 								disabled={loading || syncing}
 							/>
@@ -192,5 +192,5 @@ function HevyConnect() {
 				</CardContent>
 			</Card>
 		</main>
-	)
+	);
 }

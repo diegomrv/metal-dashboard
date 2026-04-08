@@ -2,12 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { eq } from "drizzle-orm";
 import { db } from "#/db/index";
 import { hevyApiKeys, hevyExerciseTemplates, hevyWorkouts } from "#/db/schema";
+import { decrypt, encrypt } from "#/lib/crypto";
 import { fetchAllExerciseTemplates, fetchAllWorkouts } from "./api";
 import type { ExerciseTemplate, Workout } from "./types";
 
 export const saveApiKey = createServerFn({ method: "POST" })
 	.inputValidator((input: { userId: string; apiKey: string }) => input)
 	.handler(async ({ data }) => {
+		const encryptedKey = await encrypt(data.apiKey);
 		const existing = await db
 			.select()
 			.from(hevyApiKeys)
@@ -17,12 +19,12 @@ export const saveApiKey = createServerFn({ method: "POST" })
 		if (existing) {
 			await db
 				.update(hevyApiKeys)
-				.set({ apiKey: data.apiKey })
+				.set({ apiKey: encryptedKey })
 				.where(eq(hevyApiKeys.userId, data.userId));
 		} else {
 			await db.insert(hevyApiKeys).values({
 				userId: data.userId,
-				apiKey: data.apiKey,
+				apiKey: encryptedKey,
 			});
 		}
 	});
@@ -35,7 +37,8 @@ export const getApiKey = createServerFn({ method: "GET" })
 			.from(hevyApiKeys)
 			.where(eq(hevyApiKeys.userId, data.userId))
 			.get();
-		return row?.apiKey ?? null;
+		if (!row?.apiKey) return null;
+		return decrypt(row.apiKey);
 	});
 
 export const syncHevyData = createServerFn({ method: "POST" })
