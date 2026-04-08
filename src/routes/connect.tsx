@@ -16,7 +16,7 @@ import { fetchWorkoutCount } from "#/lib/hevy/api";
 import { saveApiKey, syncHevyData } from "#/lib/hevy/sync";
 import { useApiKey } from "#/lib/hevy/use-hevy-data";
 
-export const Route = createFileRoute("/hevy/connect")({
+export const Route = createFileRoute("/connect")({
 	component: HevyConnect,
 });
 
@@ -43,16 +43,16 @@ function HevyConnect() {
 		} catch {
 			setError(
 				"Invalid API key or Hevy API is unavailable. Make sure you have Hevy Pro.",
-			);
+			)
 		} finally {
 			setLoading(false);
 		}
-	};
+	}
 
 	const handleLoadDashboard = () => {
 		setApiKey(key.trim());
-		navigate({ to: "/hevy/dashboard" });
-	};
+		navigate({ to: "/dashboard" });
+	}
 
 	const handleSaveAndSync = async () => {
 		if (!session?.user?.id) return;
@@ -63,21 +63,21 @@ function HevyConnect() {
 		try {
 			await saveApiKey({
 				data: { userId: session.user.id, apiKey: key.trim() },
-			});
+			})
 			await syncHevyData({
 				data: { userId: session.user.id, apiKey: key.trim() },
-			});
+			})
 			setApiKey(key.trim());
-			navigate({ to: "/hevy/dashboard" });
+			navigate({ to: "/dashboard" });
 		} catch {
 			setError("Failed to sync data. Try again.");
 		} finally {
 			setSyncing(false);
 		}
-	};
+	}
 
 	return (
-		<main className="flex min-h-screen items-start justify-center px-4 py-12 sm:py-20">
+		<main className="flex min-h-screen items-center justify-center px-4">
 			<Card className="rise-in w-full max-w-lg">
 				<CardHeader>
 					<CardTitle className="font-display text-2xl">
@@ -107,9 +107,9 @@ function HevyConnect() {
 								placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 								value={key}
 								onChange={(e) => {
-									setKey(e.target.value);
-									setValidated(null);
-									setError("");
+									setKey(e.target.value)
+									setValidated(null)
+									setError("")
 								}}
 								disabled={loading || syncing}
 							/>
@@ -154,16 +154,10 @@ function HevyConnect() {
 							</Button>
 						) : (
 							<div className="grid gap-3">
-								<Button type="button" onClick={handleLoadDashboard}>
-									Load Dashboard (Guest)
-								</Button>
-
-								{session?.user && (
+								{session?.user ? (
 									<>
-										<Separator />
 										<Button
 											type="button"
-											variant="outline"
 											onClick={handleSaveAndSync}
 											disabled={syncing}
 										>
@@ -181,12 +175,22 @@ function HevyConnect() {
 											persists across sessions.
 										</p>
 									</>
+								) : (
+									<Button type="button" onClick={handleLoadDashboard}>
+										Load Dashboard (Guest)
+									</Button>
 								)}
 							</div>
 						)}
 					</form>
+
+					<p className="mt-4 text-center text-sm text-muted-foreground">
+						<Link to="/login" className="text-primary underline">
+							Back to login
+						</Link>
+					</p>
 				</CardContent>
 			</Card>
 		</main>
-	);
+	)
 }

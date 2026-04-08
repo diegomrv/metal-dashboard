@@ -34,7 +34,7 @@ function LoginPage() {
 			if (result.error) {
 				setError(result.error.message || "Sign in failed");
 			} else {
-				navigate({ to: "/hevy/connect" });
+				navigate({ to: "/connect" });
 			}
 		} catch {
 			setError("An unexpected error occurred");
@@ -107,7 +107,7 @@ function LoginPage() {
 					<Button
 						variant="outline"
 						className="mt-4 w-full"
-						onClick={() => navigate({ to: "/hevy/connect" })}
+						onClick={() => navigate({ to: "/connect" })}
 					>
 						Use API key without account
 					</Button>

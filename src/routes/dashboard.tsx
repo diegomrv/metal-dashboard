@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ExerciseProgression } from "#/components/hevy/exercise-progression";
 import { MuscleDistribution } from "#/components/hevy/muscle-distribution";
 import { OverviewCards } from "#/components/hevy/overview-cards";
@@ -10,10 +10,10 @@ import { WorkoutFrequency } from "#/components/hevy/workout-frequency";
 import { Button } from "#/components/ui/button";
 import { Skeleton } from "#/components/ui/skeleton";
 import { authClient } from "#/lib/auth-client";
-import { syncHevyData } from "#/lib/hevy/sync";
+import { getStoredData, syncHevyData } from "#/lib/hevy/sync";
 import { useApiKey, useHevyData } from "#/lib/hevy/use-hevy-data";
 
-export const Route = createFileRoute("/hevy/dashboard")({
+export const Route = createFileRoute("/dashboard")({
 	component: HevyDashboard,
 });
 
@@ -25,16 +25,24 @@ function HevyDashboard() {
 	const { workouts, exerciseTemplates, isLoading, isError, error } =
 		useHevyData(apiKey);
 	const [syncing, setSyncing] = useState(false);
+	const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
+
+	useEffect(() => {
+		if (!session?.user?.id) return;
+		getStoredData({ data: { userId: session.user.id } }).then((stored) => {
+			setLastSyncAt(stored.lastSyncAt);
+		})
+	}, [session?.user?.id]);
 
 	if (!apiKey) {
-		navigate({ to: "/hevy/connect" });
+		navigate({ to: "/connect" });
 		return null;
 	}
 
 	const handleDisconnect = () => {
 		clearApiKey();
-		navigate({ to: "/hevy/connect" });
-	};
+		navigate({ to: "/connect" });
+	}
 
 	const handleSync = async () => {
 		if (!session?.user?.id || !apiKey) return;
@@ -42,13 +50,13 @@ function HevyDashboard() {
 		try {
 			await syncHevyData({
 				data: { userId: session.user.id, apiKey },
-			});
-			// Invalidate queries to refetch fresh data
+			})
+			setLastSyncAt(new Date().toISOString());
 			await queryClient.invalidateQueries({ queryKey: ["hevy"] });
 		} finally {
 			setSyncing(false);
 		}
-	};
+	}
 
 	if (isError) {
 		return (
@@ -66,7 +74,7 @@ function HevyDashboard() {
 					</Button>
 				</div>
 			</main>
-		);
+		)
 	}
 
 	return (
@@ -82,21 +90,34 @@ function HevyDashboard() {
 				</div>
 				<div className="flex items-center gap-2">
 					{session?.user && (
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={handleSync}
-							disabled={syncing}
-						>
-							{syncing ? (
-								<span className="flex items-center gap-2">
-									<span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current/30 border-t-current" />
-									Syncing...
+						<>
+							{lastSyncAt && (
+								<span className="text-xs text-muted-foreground">
+									Synced{" "}
+									{new Date(lastSyncAt).toLocaleDateString(undefined, {
+										month: "short",
+										day: "numeric",
+										hour: "numeric",
+										minute: "2-digit",
+									})}
 								</span>
-							) : (
-								"Sync"
 							)}
-						</Button>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={handleSync}
+								disabled={syncing}
+							>
+								{syncing ? (
+									<span className="flex items-center gap-2">
+										<span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current/30 border-t-current" />
+										Syncing...
+									</span>
+								) : (
+									"Sync"
+								)}
+							</Button>
+						</>
 					)}
 					<Button variant="outline" size="sm" onClick={handleDisconnect}>
 						Disconnect
@@ -125,7 +146,7 @@ function HevyDashboard() {
 				</div>
 			)}
 		</main>
-	);
+	)
 }
 
 function DashboardSkeleton() {
@@ -144,5 +165,5 @@ function DashboardSkeleton() {
 			<Skeleton className="h-96 rounded-xl" />
 			<Skeleton className="h-64 rounded-xl" />
 		</div>
-	);
+	)
 }

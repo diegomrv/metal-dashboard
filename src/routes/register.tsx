@@ -38,7 +38,7 @@ function RegisterPage() {
 			if (result.error) {
 				setError(result.error.message || "Sign up failed");
 			} else {
-				navigate({ to: "/hevy/connect" });
+				navigate({ to: "/connect" });
 			}
 		} catch {
 			setError("An unexpected error occurred");
