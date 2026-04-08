@@ -106,6 +106,15 @@ All Hevy API calls are proxied through server functions (`src/lib/hevy/api.ts`) 
 - Run `npx biome check --write` to auto-fix lint + format issues
 - Run `npx biome format --write .` to format only
 
+## Code Patterns
+
+- **Cache expensive objects:** Don't re-create crypto keys, DB connections, or parsed configs on every call. Use module-level cached promises (e.g. `let _p: Promise<T> | null = null; const get = () => (_p ??= init());`)
+- **Async callbacks in try/finally:** When using `FileReader.onload` or similar callback-based APIs inside async functions, wrap the callback in a `Promise` so `finally` runs after the async work completes, not immediately after the callback is registered
+- **Concurrent independent DB operations:** Use `Promise.all` for independent queries/mutations instead of sequential `await`s. Especially important for remote databases (D1) where each await is a round-trip
+- **Lightweight queries:** Don't fetch entire datasets when you only need one field. Create dedicated server functions for specific queries (e.g. `getLastSyncAt` instead of `getStoredData` when you only need the timestamp)
+- **Eager initialization:** For one-time setup like `mkdirSync({ recursive: true })`, run at module load instead of checking existence on every request. `recursive: true` already no-ops when the dir exists
+- **No section divider comments:** Don't use decorative `// --- Section ---` or `// ─── Name ───` dividers. Component/function names are self-documenting. Only add comments that explain non-obvious *why*
+
 ## Styling
 
 All styling uses shadcn/ui design tokens via CSS variables in `src/styles.css`. No custom CSS classes beyond `.rise-in` (entry animation).
