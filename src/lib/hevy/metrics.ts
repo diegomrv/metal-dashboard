@@ -156,7 +156,7 @@ export function dailyActivity(
 
 // --- Volume ---
 
-function setVolume(set: WorkoutSet): number {
+export function setVolume(set: WorkoutSet): number {
 	if (set.weight_kg != null && set.reps != null) {
 		return set.weight_kg * set.reps;
 	}
@@ -263,7 +263,7 @@ export function muscleDistribution(
 // --- Exercise progression (top lifts) ---
 
 // Epley formula: 1RM = weight * (1 + reps / 30)
-function estimated1RM(weight: number, reps: number): number {
+export function estimated1RM(weight: number, reps: number): number {
 	if (reps <= 0 || weight <= 0) return weight;
 	if (reps === 1) return weight;
 	return weight * (1 + reps / 30);
