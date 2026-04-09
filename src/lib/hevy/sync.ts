@@ -25,21 +25,6 @@ async function getLastSyncAtInternal(userId: string): Promise<string | null> {
 	return row?.lastSyncAt?.toISOString() ?? null;
 }
 
-async function getTemplateMap(
-	userId: string,
-): Promise<Map<string, ExerciseTemplate>> {
-	const rows = await db
-		.select({ rawJson: hevyExerciseTemplates.rawJson })
-		.from(hevyExerciseTemplates)
-		.where(eq(hevyExerciseTemplates.userId, userId));
-	return new Map(
-		rows.map((r) => {
-			const t = JSON.parse(r.rawJson) as ExerciseTemplate;
-			return [t.id, t];
-		}),
-	);
-}
-
 async function getCurrentPRBests(
 	userId: string,
 ): Promise<Map<string, { e1rm: number; volume: number }>> {
@@ -68,7 +53,8 @@ async function getCurrentPRBests(
 async function recomputeAffectedPRs(
 	userId: string,
 	affectedWorkoutIds: string[],
-): Promise<void> {
+	templateMap: Map<string, ExerciseTemplate>,
+): Promise<Set<string>> {
 	const affectedPRs = await db
 		.select({ exerciseTemplateId: hevyPersonalRecords.exerciseTemplateId })
 		.from(hevyPersonalRecords)
@@ -79,18 +65,18 @@ async function recomputeAffectedPRs(
 			),
 		);
 
-	if (affectedPRs.length === 0) return;
+	if (affectedPRs.length === 0) return new Set();
 
-	const affectedExercises = [
-		...new Set(affectedPRs.map((r) => r.exerciseTemplateId)),
-	];
+	const affectedExercises = new Set(
+		affectedPRs.map((r) => r.exerciseTemplateId),
+	);
 
 	await db
 		.delete(hevyPersonalRecords)
 		.where(
 			and(
 				eq(hevyPersonalRecords.userId, userId),
-				inArray(hevyPersonalRecords.exerciseTemplateId, affectedExercises),
+				inArray(hevyPersonalRecords.exerciseTemplateId, [...affectedExercises]),
 			),
 		);
 
@@ -106,13 +92,11 @@ async function recomputeAffectedPRs(
 				new Date(a.start_time).getTime() - new Date(b.start_time).getTime(),
 		);
 
-	const templateMap = await getTemplateMap(userId);
-
 	const filteredWorkouts = allWorkouts
 		.map((w) => ({
 			...w,
 			exercises: w.exercises.filter((ex) =>
-				affectedExercises.includes(ex.exercise_template_id),
+				affectedExercises.has(ex.exercise_template_id),
 			),
 		}))
 		.filter((w) => w.exercises.length > 0);
@@ -124,6 +108,8 @@ async function recomputeAffectedPRs(
 			.insert(hevyPersonalRecords)
 			.values(prs.map((pr) => ({ ...pr, userId })));
 	}
+
+	return affectedExercises;
 }
 
 export const saveApiKey = createServerFn({ method: "POST" })
@@ -233,17 +219,33 @@ export const syncHevyData = createServerFn({ method: "POST" })
 			}
 
 			const affectedIds = [...deletedIds, ...updatedIds];
+			let recomputedExercises = new Set<string>();
 			if (affectedIds.length > 0) {
-				await recomputeAffectedPRs(data.userId, affectedIds);
+				recomputedExercises = await recomputeAffectedPRs(
+					data.userId,
+					affectedIds,
+					templateMap,
+				);
 			}
 
 			if (updatedWorkouts.length > 0) {
-				const currentBests = await getCurrentPRBests(data.userId);
-				const newPRs = findNewPRs(updatedWorkouts, templateMap, currentBests);
-				if (newPRs.length > 0) {
-					await db
-						.insert(hevyPersonalRecords)
-						.values(newPRs.map((pr) => ({ ...pr, userId: data.userId })));
+				const workoutsToCheck = updatedWorkouts
+					.map((w) => ({
+						...w,
+						exercises: w.exercises.filter(
+							(ex) => !recomputedExercises.has(ex.exercise_template_id),
+						),
+					}))
+					.filter((w) => w.exercises.length > 0);
+
+				if (workoutsToCheck.length > 0) {
+					const currentBests = await getCurrentPRBests(data.userId);
+					const newPRs = findNewPRs(workoutsToCheck, templateMap, currentBests);
+					if (newPRs.length > 0) {
+						await db
+							.insert(hevyPersonalRecords)
+							.values(newPRs.map((pr) => ({ ...pr, userId: data.userId })));
+					}
 				}
 			}
 		} else {
@@ -341,6 +343,9 @@ export const getRecentPRs = createServerFn({ method: "GET" })
 			.select()
 			.from(hevyPersonalRecords)
 			.where(eq(hevyPersonalRecords.userId, data.userId))
-			.orderBy(desc(hevyPersonalRecords.achievedAt))
+			.orderBy(
+				desc(hevyPersonalRecords.achievedAt),
+				desc(hevyPersonalRecords.id),
+			)
 			.limit(limit);
 	});

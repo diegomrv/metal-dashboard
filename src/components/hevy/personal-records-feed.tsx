@@ -6,6 +6,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "#/components/ui/card";
+import { Skeleton } from "#/components/ui/skeleton";
 import { useRecentPRs } from "#/lib/hevy/use-hevy-data";
 
 interface Props {
@@ -33,7 +34,32 @@ function timeAgo(dateString: string): string {
 export function PersonalRecordsFeed({ userId }: Props) {
 	const { data: prs, isLoading } = useRecentPRs(userId);
 
-	if (isLoading) return null;
+	if (isLoading) {
+		return (
+			<Card className="rise-in" style={{ animationDelay: "150ms" }}>
+				<CardHeader>
+					<Skeleton className="h-5 w-40" />
+					<Skeleton className="mt-1 h-4 w-64" />
+				</CardHeader>
+				<CardContent>
+					<div className="space-y-4">
+						{[1, 2, 3].map((i) => (
+							<div key={i} className="flex items-center gap-4">
+								<div className="flex-1 space-y-2">
+									<Skeleton className="h-4 w-32" />
+									<Skeleton className="h-3 w-20" />
+								</div>
+								<div className="flex gap-2">
+									<Skeleton className="h-5 w-12" />
+									<Skeleton className="h-5 w-20" />
+								</div>
+							</div>
+						))}
+					</div>
+				</CardContent>
+			</Card>
+		);
+	}
 
 	if (!prs || prs.length === 0) {
 		return (
