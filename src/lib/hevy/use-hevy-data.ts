@@ -6,6 +6,7 @@ import {
 	fetchAllWorkouts,
 	fetchWorkoutCount,
 } from "./api";
+import { getRecentPRs, getStoredData } from "./sync";
 
 const API_KEY_STORAGE_KEY = "hevy-api-key";
 
@@ -49,6 +50,23 @@ export function useApiKey() {
 	}, []);
 
 	return { apiKey: key, setApiKey: set, clearApiKey: clear };
+}
+
+export function useStoredHevyData(userId: string | null) {
+	const query = useQuery({
+		queryKey: ["hevy", "stored", userId],
+		queryFn: () => getStoredData({ data: { userId: userId as string } }),
+		enabled: !!userId,
+	});
+
+	return {
+		workouts: query.data?.workouts ?? [],
+		exerciseTemplates: query.data?.templates ?? [],
+		lastSyncAt: query.data?.lastSyncAt ?? null,
+		isLoading: query.isLoading,
+		isError: query.isError,
+		error: query.error,
+	};
 }
 
 const THIRTY_MINUTES = 30 * 60 * 1000;
@@ -106,4 +124,12 @@ export function useHevyData(apiKey: string | null) {
 		isError,
 		error,
 	};
+}
+
+export function useRecentPRs(userId: string | null) {
+	return useQuery({
+		queryKey: ["hevy", "prs", userId],
+		queryFn: () => getRecentPRs({ data: { userId: userId as string } }),
+		enabled: !!userId,
+	});
 }
