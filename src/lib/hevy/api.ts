@@ -4,6 +4,8 @@ import type {
 	Routine,
 	Workout,
 	WorkoutCountResponse,
+	WorkoutEvent,
+	WorkoutEventsResponse,
 } from "./types";
 
 const HEVY_BASE_URL = "https://api.hevyapp.com";
@@ -88,4 +90,26 @@ export const fetchAllRoutines = createServerFn({ method: "GET" })
 	.inputValidator((input: { apiKey: string }) => input)
 	.handler(async ({ data }) => {
 		return fetchAllPages<Routine>("/v1/routines", data.apiKey, "routines", 10);
+	});
+
+export const fetchWorkoutEvents = createServerFn({ method: "GET" })
+	.inputValidator((input: { apiKey: string; since: string }) => input)
+	.handler(async ({ data }) => {
+		const all: WorkoutEvent[] = [];
+		let page = 1;
+
+		while (true) {
+			const res = await hevyFetch<WorkoutEventsResponse>(
+				"/v1/workouts/events",
+				data.apiKey,
+				{ page: String(page), pageSize: "10", since: data.since },
+			);
+
+			all.push(...res.events);
+
+			if (page >= res.page_count) break;
+			page++;
+		}
+
+		return all;
 	});
