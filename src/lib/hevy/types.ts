@@ -134,3 +134,22 @@ export interface RoutinesResponse {
 export interface WorkoutCountResponse {
 	workout_count: number;
 }
+
+export interface WorkoutUpdatedEvent {
+	type: "updated";
+	workout: Workout;
+}
+
+export interface WorkoutDeletedEvent {
+	type: "deleted";
+	id: string;
+	deleted_at: string;
+}
+
+export type WorkoutEvent = WorkoutUpdatedEvent | WorkoutDeletedEvent;
+
+export interface WorkoutEventsResponse {
+	page: number;
+	page_count: number;
+	events: WorkoutEvent[];
+}
