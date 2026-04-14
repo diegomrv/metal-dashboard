@@ -33,7 +33,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<head>
-				{/* Safe: hardcoded theme init script with no user input */}
+				{/* biome-ignore lint/security/noDangerouslySetInnerHtml: hardcoded theme init script, no user input */}
 				<script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
 				<HeadContent />
 			</head>

@@ -10,18 +10,23 @@ function getEncryptionKey(): string {
 }
 
 async function importKey(hexKey: string): Promise<CryptoKey> {
-	const keyBytes = new Uint8Array(
-		hexKey.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)),
+	const pairs = hexKey.match(/.{1,2}/g) ?? [];
+	const keyBytes = new Uint8Array(pairs.map((byte) => parseInt(byte, 16)));
+	return crypto.subtle.importKey(
+		"raw",
+		keyBytes as BufferSource,
+		ALGORITHM,
+		false,
+		["encrypt", "decrypt"],
 	);
-	return crypto.subtle.importKey("raw", keyBytes, ALGORITHM, false, [
-		"encrypt",
-		"decrypt",
-	]);
 }
 
 let _keyPromise: Promise<CryptoKey> | null = null;
 function getCryptoKey(): Promise<CryptoKey> {
-	return (_keyPromise ??= importKey(getEncryptionKey()));
+	if (_keyPromise == null) {
+		_keyPromise = importKey(getEncryptionKey());
+	}
+	return _keyPromise;
 }
 
 function toBase64(buffer: ArrayBuffer): string {
@@ -39,12 +44,12 @@ export async function encrypt(plaintext: string): Promise<string> {
 	const encoded = new TextEncoder().encode(plaintext);
 
 	const ciphertext = await crypto.subtle.encrypt(
-		{ name: ALGORITHM, iv },
+		{ name: ALGORITHM, iv: iv as BufferSource },
 		key,
-		encoded,
+		encoded as BufferSource,
 	);
 
-	return `${toBase64(iv.buffer)}:${toBase64(ciphertext)}`;
+	return `${toBase64(iv.buffer as ArrayBuffer)}:${toBase64(ciphertext)}`;
 }
 
 /** Decrypts an `iv:ciphertext` string produced by `encrypt`. */
@@ -55,9 +60,9 @@ export async function decrypt(encrypted: string): Promise<string> {
 	const ciphertext = fromBase64(ciphertextBase64);
 
 	const decrypted = await crypto.subtle.decrypt(
-		{ name: ALGORITHM, iv },
+		{ name: ALGORITHM, iv: iv as BufferSource },
 		key,
-		ciphertext,
+		ciphertext as BufferSource,
 	);
 
 	return new TextDecoder().decode(decrypted);
