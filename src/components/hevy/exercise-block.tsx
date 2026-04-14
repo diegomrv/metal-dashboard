@@ -1,5 +1,11 @@
 import { Badge } from "#/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "#/components/ui/tooltip";
 import type { PreviousSessionDelta } from "#/lib/hevy/metrics";
 import { estimated1RM } from "#/lib/hevy/metrics";
 import type {
@@ -24,8 +30,8 @@ interface Props {
 }
 
 function signTone(v: number): string {
-	if (v > 0) return "bg-chart-3/15 text-chart-3";
-	if (v < 0) return "bg-chart-1/15 text-chart-1";
+	if (v > 0) return "bg-success/15 text-success";
+	if (v < 0) return "bg-destructive/15 text-destructive";
 	return "bg-muted text-muted-foreground";
 }
 
@@ -108,26 +114,48 @@ export function ExerciseBlock({ exercise, template, prs, delta }: Props) {
 					{muscle && <Badge variant="secondary">{muscle}</Badge>}
 				</div>
 				{showDelta && delta && (
-					<div className="flex flex-wrap gap-1.5 pt-1">
-						<span
-							className={`rounded-sm px-2 py-0.5 text-xs font-medium tabular-nums ${signTone(delta.volumeDelta)}`}
-							title={`vs ${delta.previousDate}`}
-						>
-							Δ vol {signed(Math.round(delta.volumeDelta))}
-						</span>
-						<span
-							className={`rounded-sm px-2 py-0.5 text-xs font-medium tabular-nums ${signTone(delta.topE1rmDelta)}`}
-							title={`vs ${delta.previousDate}`}
-						>
-							Δ top e1RM {signed(Math.round(delta.topE1rmDelta * 10) / 10)}
-						</span>
-						<span
-							className={`rounded-sm px-2 py-0.5 text-xs font-medium tabular-nums ${signTone(delta.setCountDelta)}`}
-							title={`vs ${delta.previousDate}`}
-						>
-							Δ sets {signed(delta.setCountDelta)}
-						</span>
-					</div>
+					<TooltipProvider delayDuration={150}>
+						<div className="flex flex-wrap gap-1.5 pt-1">
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<span
+										className={`cursor-help rounded-sm px-2 py-0.5 text-xs font-medium tabular-nums ${signTone(delta.volumeDelta)}`}
+									>
+										Δ vol {signed(Math.round(delta.volumeDelta))}
+									</span>
+								</TooltipTrigger>
+								<TooltipContent>
+									Change in total volume vs last session ({delta.previousDate})
+								</TooltipContent>
+							</Tooltip>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<span
+										className={`cursor-help rounded-sm px-2 py-0.5 text-xs font-medium tabular-nums ${signTone(delta.topE1rmDelta)}`}
+									>
+										Δ top e1RM{" "}
+										{signed(Math.round(delta.topE1rmDelta * 10) / 10)}
+									</span>
+								</TooltipTrigger>
+								<TooltipContent>
+									Change in top estimated 1RM vs last session (
+									{delta.previousDate})
+								</TooltipContent>
+							</Tooltip>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<span
+										className={`cursor-help rounded-sm px-2 py-0.5 text-xs font-medium tabular-nums ${signTone(delta.setCountDelta)}`}
+									>
+										Δ sets {signed(delta.setCountDelta)}
+									</span>
+								</TooltipTrigger>
+								<TooltipContent>
+									Change in set count vs last session ({delta.previousDate})
+								</TooltipContent>
+							</Tooltip>
+						</div>
+					</TooltipProvider>
 				)}
 				{exercise.notes && (
 					<p className="text-sm italic text-muted-foreground">
@@ -176,7 +204,7 @@ export function ExerciseBlock({ exercise, template, prs, delta }: Props) {
 									</span>
 								)}
 								{isPR && (
-									<Badge className="bg-chart-1 text-white hover:bg-chart-1">
+									<Badge className="bg-chart-1 text-neutral-950 hover:bg-chart-1">
 										PR
 									</Badge>
 								)}
