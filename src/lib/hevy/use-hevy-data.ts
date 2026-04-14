@@ -57,6 +57,7 @@ export function useStoredHevyData(userId: string | null) {
 		queryKey: ["hevy", "stored", userId],
 		queryFn: () => getStoredData({ data: { userId: userId as string } }),
 		enabled: !!userId,
+		refetchOnWindowFocus: true,
 	});
 
 	return {
@@ -131,5 +132,6 @@ export function useRecentPRs(userId: string | null) {
 		queryKey: ["hevy", "prs", userId],
 		queryFn: () => getRecentPRs({ data: { userId: userId as string } }),
 		enabled: !!userId,
+		refetchOnWindowFocus: true,
 	});
 }

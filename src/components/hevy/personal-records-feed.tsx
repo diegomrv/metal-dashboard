@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { Badge } from "#/components/ui/badge";
 import {
 	Card,
@@ -70,8 +71,11 @@ export function PersonalRecordsFeed({ userId }: Props) {
 						Your most recent record-breaking lifts
 					</CardDescription>
 				</CardHeader>
-				<CardContent className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-					No personal records yet. Sync your data to get started.
+				<CardContent className="flex h-32 flex-col items-center justify-center gap-1 text-center text-sm">
+					<p className="font-medium">No PRs yet</p>
+					<p className="text-xs text-muted-foreground">
+						Log a few workouts in Hevy, then hit Sync.
+					</p>
 				</CardContent>
 			</Card>
 		);
@@ -88,38 +92,38 @@ export function PersonalRecordsFeed({ userId }: Props) {
 			<CardContent>
 				<div className="divide-y divide-border">
 					{prs.map((pr) => (
-						<div
+						<Link
 							key={pr.id}
-							className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:gap-4"
+							to="/workout/$id"
+							params={{ id: pr.workoutId }}
+							className="-mx-2 flex flex-col gap-2 rounded-md px-2 py-3 transition-colors hover:bg-accent/50 sm:flex-row sm:items-center sm:gap-4 lg:flex-col lg:items-stretch lg:gap-2"
 						>
-							<div className="min-w-0 flex-1">
-								<p className="truncate font-medium">{pr.exerciseTitle}</p>
-								<p className="text-xs text-muted-foreground">
+							<div className="flex min-w-0 flex-1 items-baseline justify-between gap-2 sm:block lg:flex">
+								<p className="min-w-0 flex-1 truncate font-medium">
+									{pr.exerciseTitle}
+								</p>
+								<p className="shrink-0 text-xs text-muted-foreground">
 									{timeAgo(pr.achievedAt)}
 								</p>
 							</div>
-							<div className="flex flex-wrap items-center gap-2">
-								<Badge variant="secondary">
+							<div className="flex flex-wrap items-center gap-1.5 sm:justify-end lg:justify-start">
+								<Badge variant="secondary" className="text-[10px]">
 									{pr.type === "e1rm" ? "1RM" : "Volume"}
 								</Badge>
-								<Badge variant="outline">
-									{pr.weightKg}kg x {pr.reps}
+								<Badge variant="outline" className="text-[10px]">
+									{pr.weightKg}kg × {pr.reps}
 								</Badge>
-								<span className="text-sm text-muted-foreground">
-									{pr.type === "e1rm"
-										? `Est. 1RM: ${Math.round(pr.value * 10) / 10}kg`
-										: `Volume: ${Math.round(pr.value * 10) / 10}kg`}
-								</span>
 								{pr.previousValue != null ? (
-									<span className="text-sm font-medium text-green-600 dark:text-green-400">
-										+{Math.round((pr.value - pr.previousValue) * 10) / 10}
-										kg
+									<span className="text-xs font-medium text-success tabular-nums">
+										+{Math.round((pr.value - pr.previousValue) * 10) / 10} kg
 									</span>
 								) : (
-									<Badge variant="default">First!</Badge>
+									<Badge variant="default" className="text-[10px]">
+										First!
+									</Badge>
 								)}
 							</div>
-						</div>
+						</Link>
 					))}
 				</div>
 			</CardContent>

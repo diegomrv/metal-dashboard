@@ -90,6 +90,58 @@ export function workoutsInPeriod(workouts: Workout[], since: Date): number {
 	return workouts.filter((w) => new Date(w.start_time) >= since).length;
 }
 
+export function workoutsBetween(
+	workouts: Workout[],
+	start: Date,
+	end: Date,
+): Workout[] {
+	return workouts.filter((w) => {
+		const t = new Date(w.start_time).getTime();
+		return t >= start.getTime() && t < end.getTime();
+	});
+}
+
+export function volumeSum(workouts: Workout[]): number {
+	let total = 0;
+	for (const w of workouts) {
+		for (const ex of w.exercises) {
+			for (const set of ex.sets) {
+				total += setVolume(set);
+			}
+		}
+	}
+	return total;
+}
+
+export interface WeeklyVolumeDelta {
+	thisWeek: number;
+	lastWeek: number;
+	deltaPct: number | null;
+}
+
+export function weeklyVolumeDelta(workouts: Workout[]): WeeklyVolumeDelta {
+	const now = new Date();
+	const thisWeekStart = startOfWeek(now);
+	const lastWeekStart = new Date(
+		thisWeekStart.getTime() - 7 * 24 * 60 * 60 * 1000,
+	);
+	const nextWeekStart = new Date(
+		thisWeekStart.getTime() + 7 * 24 * 60 * 60 * 1000,
+	);
+
+	const thisWeek = volumeSum(
+		workoutsBetween(workouts, thisWeekStart, nextWeekStart),
+	);
+	const lastWeek = volumeSum(
+		workoutsBetween(workouts, lastWeekStart, thisWeekStart),
+	);
+
+	const deltaPct =
+		lastWeek > 0 ? ((thisWeek - lastWeek) / lastWeek) * 100 : null;
+
+	return { thisWeek, lastWeek, deltaPct };
+}
+
 // --- Frequency ---
 
 export interface WeeklyFrequency {

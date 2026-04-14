@@ -153,7 +153,7 @@ function PersonalInfoCard({
 								{initials(name)}
 							</AvatarFallback>
 						</Avatar>
-						<div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+						<div className="absolute inset-0 flex items-center justify-center rounded-full bg-overlay opacity-0 transition-opacity duration-150 group-hover:opacity-100">
 							{uploadingAvatar ? (
 								<Spinner />
 							) : (

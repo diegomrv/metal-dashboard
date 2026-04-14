@@ -48,8 +48,12 @@ export function ExerciseProgression({ workouts, templates }: Props) {
 					<CardTitle>Exercise Progression</CardTitle>
 					<CardDescription>Your top lifts over time</CardDescription>
 				</CardHeader>
-				<CardContent className="flex h-48 items-center justify-center text-sm text-muted-foreground">
-					Not enough data to show progressions
+				<CardContent className="flex h-48 flex-col items-center justify-center gap-1 text-center text-sm">
+					<p className="font-medium">No progression yet</p>
+					<p className="text-xs text-muted-foreground">
+						Log the same lift at least twice to see 1RM trends. Try expanding
+						the date range.
+					</p>
 				</CardContent>
 			</Card>
 		);
@@ -146,6 +150,7 @@ export function ExerciseProgression({ workouts, templates }: Props) {
 							strokeWidth={2}
 							dot={{ r: 3, fill: "var(--color-e1rm)" }}
 							activeDot={{ r: 5 }}
+							animationDuration={300}
 						/>
 					</LineChart>
 				</ChartContainer>

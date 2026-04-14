@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "#/components/ui/button";
 import {
 	Card,
@@ -10,10 +10,9 @@ import {
 } from "#/components/ui/card";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
-import { Separator } from "#/components/ui/separator";
 import { authClient } from "#/lib/auth-client";
 import { fetchWorkoutCount } from "#/lib/hevy/api";
-import { saveApiKey, syncHevyData } from "#/lib/hevy/sync";
+import { getApiKey, saveApiKey, syncHevyData } from "#/lib/hevy/sync";
 import { useApiKey } from "#/lib/hevy/use-hevy-data";
 
 export const Route = createFileRoute("/connect")({
@@ -22,13 +21,24 @@ export const Route = createFileRoute("/connect")({
 
 function HevyConnect() {
 	const navigate = useNavigate();
-	const { data: session } = authClient.useSession();
+	const { data: session, isPending } = authClient.useSession();
 	const { setApiKey } = useApiKey();
 	const [key, setKey] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [syncing, setSyncing] = useState(false);
 	const [error, setError] = useState("");
 	const [validated, setValidated] = useState<number | null>(null);
+
+	useEffect(() => {
+		if (isPending) return;
+		if (!session?.user?.id) return;
+		getApiKey({ data: { userId: session.user.id } }).then((storedKey) => {
+			if (storedKey) {
+				setApiKey(storedKey);
+				navigate({ to: "/dashboard" });
+			}
+		});
+	}, [session?.user?.id, isPending, navigate, setApiKey]);
 
 	const handleValidate = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -42,7 +52,7 @@ function HevyConnect() {
 			setValidated(count);
 		} catch {
 			setError(
-				"Invalid API key or Hevy API is unavailable. Make sure you have Hevy Pro.",
+				"That key didn't work. Double-check it at hevy.com/settings and confirm Hevy Pro is active.",
 			);
 		} finally {
 			setLoading(false);
@@ -70,7 +80,9 @@ function HevyConnect() {
 			setApiKey(key.trim());
 			navigate({ to: "/dashboard" });
 		} catch {
-			setError("Failed to sync data. Try again.");
+			setError(
+				"Sync failed. Hevy's API may be down, or your key was revoked. Try again in a minute.",
+			);
 		} finally {
 			setSyncing(false);
 		}
