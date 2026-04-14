@@ -1,8 +1,10 @@
+import { getServerEnv } from "./runtime-env";
+
 const ALGORITHM = "AES-GCM";
 const IV_LENGTH = 12;
 
 function getEncryptionKey(): string {
-	const key = process.env.ENCRYPTION_KEY;
+	const key = getServerEnv("ENCRYPTION_KEY");
 	if (!key) {
 		throw new Error("ENCRYPTION_KEY environment variable is not set");
 	}
