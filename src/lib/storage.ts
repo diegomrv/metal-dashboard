@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getStorageBackend, isCloudflareRuntime } from "./runtime-env";
 
 function getUploadDir() {
 	const path = require("node:path");
@@ -31,11 +32,18 @@ export const uploadProfileImage = createServerFn({ method: "POST" })
 		const buffer = Buffer.from(data.base64, "base64");
 		const ext = path.extname(data.fileName) || ".jpg";
 		const safeName = `${data.userId}-${Date.now()}${ext}`;
+		const storageBackend = getStorageBackend();
 
-		const isR2 = process.env.STORAGE_BACKEND === "r2";
-		const url = isR2
-			? await saveR2(safeName, buffer)
-			: await saveLocal(safeName, buffer);
+		if (isCloudflareRuntime() && storageBackend !== "r2") {
+			throw new Error(
+				"Profile image uploads on Cloudflare Workers require STORAGE_BACKEND=r2",
+			);
+		}
+
+		const url =
+			storageBackend === "r2"
+				? await saveR2(safeName, buffer)
+				: await saveLocal(safeName, buffer);
 
 		return { url };
 	});

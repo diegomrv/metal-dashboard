@@ -1,0 +1,19 @@
+{
+	"name": "metal-dashboard",
+	"main": "@tanstack/react-start/server-entry",
+	"compatibility_date": "2026-04-14",
+	"compatibility_flags": ["nodejs_compat"],
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "metal-dashboard-db",
+			"database_id": "3e154f7b-735a-4010-a6fd-3c10cfa3c80a",
+			"migrations_dir": "drizzle"
+		}
+	],
+	"vars": {
+		"BETTER_AUTH_URL": "https://metal-dashboard.winston-bentley.workers.dev",
+		"STORAGE_BACKEND": "local",
+		"VITE_POSTHOG_HOST": "https://us.i.posthog.com"
+	}
+}

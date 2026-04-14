@@ -1,8 +1,8 @@
-# CLAUDE.md
+# AGENTS.md
 
 ## Mirror Requirement
 
-`CLAUDE.md` and `AGENTS.md` must be kept as mirrors of each other. Any project-level instruction added, removed, or changed in one file must be applied to the other file in the same edit.
+`AGENTS.md` and `CLAUDE.md` must be kept as mirrors of each other. Any project-level instruction added, removed, or changed in one file must be applied to the other file in the same edit.
 
 ## Project Overview
 
