@@ -1,10 +1,12 @@
 import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { eq } from "drizzle-orm";
 import { db } from "#/db/index";
 import { hevyApiKeys, hevyExerciseTemplates, hevyWorkouts } from "#/db/schema";
 
 export const auth = betterAuth({
+	database: drizzleAdapter(db, { provider: "sqlite" }),
 	emailAndPassword: {
 		enabled: true,
 	},

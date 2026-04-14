@@ -144,6 +144,7 @@ Required in `.env.local`:
 - Hevy API paginates at max 10 items/page (workouts, routines) and 100/page (exercise templates). The server functions handle this automatically.
 - Biome schema version in `biome.json` may lag behind the installed CLI. Run `npx biome migrate` if you see a version mismatch warning.
 - `pnpm install` may warn about ignored build scripts. Run `pnpm approve-builds` to whitelist them.
+- **`pnpm db:push` drops tables not in `schema.ts`** -- Better Auth manages its own tables (`user`, `session`, `account`, `verification`) outside our Drizzle schema. Running `db:push` will silently delete them, wiping all user accounts. Use `db:push` only for initial setup or when you're OK recreating accounts. For schema changes in production, use `db:generate` + `db:migrate` instead.
 
 ## Design Context
 
