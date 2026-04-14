@@ -14,3 +14,7 @@ todos.json
 test-results
 .playwright
 public/uploads/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
