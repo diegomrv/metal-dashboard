@@ -13,8 +13,11 @@ import {
 	fetchAllWorkouts,
 	fetchWorkoutEvents,
 } from "./api";
+import { estimated1RM, setVolume } from "./metrics";
 import { computePRsFromWorkouts, findNewPRs } from "./pr";
 import type { ExerciseTemplate, Workout } from "./types";
+
+const PR_LOGIC_VERSION = 3;
 
 async function getLastSyncAtInternal(userId: string): Promise<string | null> {
 	const row = await db
@@ -25,29 +28,73 @@ async function getLastSyncAtInternal(userId: string): Promise<string | null> {
 	return row?.lastSyncAt?.toISOString() ?? null;
 }
 
-async function getCurrentPRBests(
+async function getHistoricalBestsFromWorkouts(
 	userId: string,
+	templateMap: Map<string, ExerciseTemplate>,
+	excludeWorkoutIds: Set<string>,
 ): Promise<Map<string, { e1rm: number; volume: number }>> {
 	const rows = await db
-		.select()
-		.from(hevyPersonalRecords)
-		.where(eq(hevyPersonalRecords.userId, userId));
+		.select({ rawJson: hevyWorkouts.rawJson })
+		.from(hevyWorkouts)
+		.where(eq(hevyWorkouts.userId, userId));
 
 	const bests = new Map<string, { e1rm: number; volume: number }>();
+
 	for (const row of rows) {
-		const current = bests.get(row.exerciseTemplateId) ?? {
-			e1rm: 0,
-			volume: 0,
-		};
-		if (row.type === "e1rm" && row.value > current.e1rm) {
-			current.e1rm = row.value;
+		const workout = JSON.parse(row.rawJson) as Workout;
+		if (excludeWorkoutIds.has(workout.id)) continue;
+
+		for (const exercise of workout.exercises) {
+			const template = templateMap.get(exercise.exercise_template_id);
+			if (!template || template.type !== "weight_reps") continue;
+
+			for (const set of exercise.sets) {
+				if (set.type !== "normal" && set.type !== "failure") continue;
+				if (set.weight_kg == null || set.reps == null) continue;
+				if (set.weight_kg <= 0 || set.reps <= 0) continue;
+
+				const e1rm = estimated1RM(set.weight_kg, set.reps);
+				const volume = setVolume(set);
+				const current = bests.get(exercise.exercise_template_id) ?? {
+					e1rm: 0,
+					volume: 0,
+				};
+				if (e1rm > current.e1rm) current.e1rm = e1rm;
+				if (volume > current.volume) current.volume = volume;
+				bests.set(exercise.exercise_template_id, current);
+			}
 		}
-		if (row.type === "volume" && row.value > current.volume) {
-			current.volume = row.value;
-		}
-		bests.set(row.exerciseTemplateId, current);
 	}
+
 	return bests;
+}
+
+async function rebuildAllPRsForUser(
+	userId: string,
+	templateMap: Map<string, ExerciseTemplate>,
+): Promise<void> {
+	const rows = await db
+		.select({ rawJson: hevyWorkouts.rawJson })
+		.from(hevyWorkouts)
+		.where(eq(hevyWorkouts.userId, userId));
+
+	const sorted = rows
+		.map((r) => JSON.parse(r.rawJson) as Workout)
+		.sort(
+			(a, b) =>
+				new Date(a.start_time).getTime() - new Date(b.start_time).getTime(),
+		);
+
+	await db
+		.delete(hevyPersonalRecords)
+		.where(eq(hevyPersonalRecords.userId, userId));
+
+	const prs = computePRsFromWorkouts(sorted, templateMap);
+	if (prs.length > 0) {
+		await db
+			.insert(hevyPersonalRecords)
+			.values(prs.map((pr) => ({ ...pr, userId })));
+	}
 }
 
 async function recomputeAffectedPRs(
@@ -150,7 +197,16 @@ export const getApiKey = createServerFn({ method: "GET" })
 export const syncHevyData = createServerFn({ method: "POST" })
 	.inputValidator((input: { userId: string; apiKey: string }) => input)
 	.handler(async ({ data }) => {
-		const lastSyncAt = await getLastSyncAtInternal(data.userId);
+		const keyRow = await db
+			.select({
+				lastSyncAt: hevyApiKeys.lastSyncAt,
+				prLogicVersion: hevyApiKeys.prLogicVersion,
+			})
+			.from(hevyApiKeys)
+			.where(eq(hevyApiKeys.userId, data.userId))
+			.get();
+		const lastSyncAt = keyRow?.lastSyncAt?.toISOString() ?? null;
+		const storedPrLogicVersion = keyRow?.prLogicVersion ?? 0;
 
 		const templates = await fetchAllExerciseTemplates({
 			data: { apiKey: data.apiKey },
@@ -172,6 +228,10 @@ export const syncHevyData = createServerFn({ method: "POST" })
 		}
 
 		const templateMap = new Map(templates.map((t) => [t.id, t]));
+
+		if (lastSyncAt && storedPrLogicVersion < PR_LOGIC_VERSION) {
+			await rebuildAllPRsForUser(data.userId, templateMap);
+		}
 
 		if (lastSyncAt) {
 			const events = await fetchWorkoutEvents({
@@ -239,7 +299,11 @@ export const syncHevyData = createServerFn({ method: "POST" })
 					.filter((w) => w.exercises.length > 0);
 
 				if (workoutsToCheck.length > 0) {
-					const currentBests = await getCurrentPRBests(data.userId);
+					const currentBests = await getHistoricalBestsFromWorkouts(
+						data.userId,
+						templateMap,
+						new Set(updatedIds),
+					);
 					const newPRs = findNewPRs(workoutsToCheck, templateMap, currentBests);
 					if (newPRs.length > 0) {
 						await db
@@ -285,7 +349,7 @@ export const syncHevyData = createServerFn({ method: "POST" })
 
 		await db
 			.update(hevyApiKeys)
-			.set({ lastSyncAt: new Date() })
+			.set({ lastSyncAt: new Date(), prLogicVersion: PR_LOGIC_VERSION })
 			.where(eq(hevyApiKeys.userId, data.userId));
 
 		const workoutCount = await db
@@ -333,6 +397,45 @@ export const getStoredData = createServerFn({ method: "GET" })
 			templates,
 			lastSyncAt: keyRow?.lastSyncAt?.toISOString() ?? null,
 		};
+	});
+
+export const getWorkoutById = createServerFn({ method: "GET" })
+	.inputValidator((input: { userId: string; hevyId: string }) => input)
+	.handler(async ({ data }) => {
+		const [workoutRow, templateRows, prRows] = await Promise.all([
+			db
+				.select()
+				.from(hevyWorkouts)
+				.where(
+					and(
+						eq(hevyWorkouts.userId, data.userId),
+						eq(hevyWorkouts.hevyId, data.hevyId),
+					),
+				)
+				.get(),
+			db
+				.select()
+				.from(hevyExerciseTemplates)
+				.where(eq(hevyExerciseTemplates.userId, data.userId)),
+			db
+				.select()
+				.from(hevyPersonalRecords)
+				.where(
+					and(
+						eq(hevyPersonalRecords.userId, data.userId),
+						eq(hevyPersonalRecords.workoutId, data.hevyId),
+					),
+				),
+		]);
+
+		if (!workoutRow) return null;
+
+		const workout = JSON.parse(workoutRow.rawJson) as Workout;
+		const templates: ExerciseTemplate[] = templateRows.map(
+			(r) => JSON.parse(r.rawJson) as ExerciseTemplate,
+		);
+
+		return { workout, templates, prs: prRows };
 	});
 
 export const getRecentPRs = createServerFn({ method: "GET" })

@@ -24,6 +24,7 @@ export const hevyApiKeys = sqliteTable("hevy_api_keys", {
 	userId: text("user_id").notNull().unique(),
 	apiKey: text("api_key").notNull(),
 	lastSyncAt: integer("last_sync_at", { mode: "timestamp" }),
+	prLogicVersion: integer("pr_logic_version").notNull().default(0),
 	createdAt: integer("created_at", { mode: "timestamp" }).default(
 		sql`(unixepoch())`,
 	),

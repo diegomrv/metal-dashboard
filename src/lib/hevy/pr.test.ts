@@ -40,7 +40,7 @@ const templateMap = new Map([
 ]);
 
 describe("computePRsFromWorkouts", () => {
-	it("produces e1rm and volume PRs for first workout", () => {
+	it("does not produce PRs for an exercise's first appearance", () => {
 		const workouts: Workout[] = [
 			makeWorkout({
 				id: "w1",
@@ -69,14 +69,7 @@ describe("computePRsFromWorkouts", () => {
 		];
 
 		const prs = computePRsFromWorkouts(workouts, templateMap);
-
-		expect(prs).toHaveLength(2);
-		expect(prs[0].type).toBe("e1rm");
-		expect(prs[0].previousValue).toBeNull();
-		expect(prs[0].workoutId).toBe("w1");
-		expect(prs[1].type).toBe("volume");
-		expect(prs[1].value).toBe(640); // 80 * 8
-		expect(prs[1].previousValue).toBeNull();
+		expect(prs).toHaveLength(0);
 	});
 
 	it("detects new PR when second workout beats first", () => {
@@ -135,10 +128,9 @@ describe("computePRsFromWorkouts", () => {
 
 		const prs = computePRsFromWorkouts(workouts, templateMap);
 
-		expect(prs).toHaveLength(4);
-		const w2Prs = prs.filter((p) => p.workoutId === "w2");
-		expect(w2Prs).toHaveLength(2);
-		expect(w2Prs[0].previousValue).not.toBeNull();
+		expect(prs).toHaveLength(2);
+		expect(prs.every((p) => p.workoutId === "w2")).toBe(true);
+		expect(prs[0].previousValue).not.toBeNull();
 	});
 
 	it("skips non-weight_reps exercises", () => {
@@ -270,8 +262,7 @@ describe("computePRsFromWorkouts", () => {
 		];
 
 		const prs = computePRsFromWorkouts(workouts, templateMap);
-		expect(prs).toHaveLength(2);
-		expect(prs.every((p) => p.workoutId === "w1")).toBe(true);
+		expect(prs).toHaveLength(0);
 	});
 });
 
@@ -312,6 +303,98 @@ describe("findNewPRs", () => {
 		expect(prs[0].previousValue).toBe(100);
 		expect(prs[1].type).toBe("volume");
 		expect(prs[1].previousValue).toBe(400);
+	});
+
+	it("emits at most one e1rm and one volume PR per exercise for a ramp", () => {
+		const currentBests = new Map([["bench-001", { e1rm: 1, volume: 1 }]]);
+		const workouts: Workout[] = [
+			makeWorkout({
+				id: "w1",
+				exercises: [
+					{
+						index: 0,
+						title: "Bench Press",
+						notes: null,
+						exercise_template_id: "bench-001",
+						supersets_id: null,
+						sets: [
+							{
+								index: 0,
+								type: "normal",
+								weight_kg: 60,
+								reps: 15,
+								distance_meters: null,
+								duration_seconds: null,
+								rpe: null,
+								custom_metric: null,
+							},
+							{
+								index: 1,
+								type: "normal",
+								weight_kg: 70,
+								reps: 12,
+								distance_meters: null,
+								duration_seconds: null,
+								rpe: null,
+								custom_metric: null,
+							},
+							{
+								index: 2,
+								type: "normal",
+								weight_kg: 80,
+								reps: 10,
+								distance_meters: null,
+								duration_seconds: null,
+								rpe: null,
+								custom_metric: null,
+							},
+						],
+					},
+				],
+			}),
+		];
+
+		const prs = findNewPRs(workouts, templateMap, currentBests);
+		const e1rm = prs.filter((p) => p.type === "e1rm");
+		const volume = prs.filter((p) => p.type === "volume");
+		expect(e1rm).toHaveLength(1);
+		expect(volume).toHaveLength(1);
+		expect(e1rm[0].weightKg).toBe(80);
+		expect(e1rm[0].reps).toBe(10);
+	});
+
+	it("emits only a volume PR when e1rm does not improve", () => {
+		const currentBests = new Map([["bench-001", { e1rm: 10000, volume: 100 }]]);
+		const workouts: Workout[] = [
+			makeWorkout({
+				id: "w2",
+				exercises: [
+					{
+						index: 0,
+						title: "Bench Press",
+						notes: null,
+						exercise_template_id: "bench-001",
+						supersets_id: null,
+						sets: [
+							{
+								index: 0,
+								type: "normal",
+								weight_kg: 60,
+								reps: 20,
+								distance_meters: null,
+								duration_seconds: null,
+								rpe: null,
+								custom_metric: null,
+							},
+						],
+					},
+				],
+			}),
+		];
+
+		const prs = findNewPRs(workouts, templateMap, currentBests);
+		expect(prs).toHaveLength(1);
+		expect(prs[0].type).toBe("volume");
 	});
 
 	it("returns empty when no records broken", () => {
