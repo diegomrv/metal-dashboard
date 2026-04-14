@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "#/components/ui/button";
 import {
 	Card,
@@ -19,10 +19,17 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
 	const navigate = useNavigate();
+	const { data: session, isPending } = authClient.useSession();
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
+
+	useEffect(() => {
+		if (!isPending && session?.user) {
+			navigate({ to: "/dashboard" });
+		}
+	}, [session, isPending, navigate]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -34,7 +41,7 @@ function LoginPage() {
 			if (result.error) {
 				setError(result.error.message || "Sign in failed");
 			} else {
-				navigate({ to: "/connect" });
+				navigate({ to: "/dashboard" });
 			}
 		} catch {
 			setError("An unexpected error occurred");

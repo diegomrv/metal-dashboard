@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "#/components/ui/button";
 import {
 	Card,
@@ -18,11 +18,18 @@ export const Route = createFileRoute("/register")({
 
 function RegisterPage() {
 	const navigate = useNavigate();
+	const { data: session, isPending } = authClient.useSession();
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
+
+	useEffect(() => {
+		if (!isPending && session?.user) {
+			navigate({ to: "/dashboard" });
+		}
+	}, [session, isPending, navigate]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
