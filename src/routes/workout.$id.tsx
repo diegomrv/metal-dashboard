@@ -52,6 +52,7 @@ function WorkoutPage() {
 					workout={query.data.workout}
 					templates={query.data.templates}
 					prs={query.data.prs}
+					sessionInsights={query.data.sessionInsights}
 				/>
 			) : (
 				<div className="rise-in mx-auto max-w-md rounded-lg border border-border p-6 text-center">

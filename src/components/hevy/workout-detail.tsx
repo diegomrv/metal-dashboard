@@ -4,9 +4,15 @@ import {
 	CardHeader,
 	CardTitle,
 } from "#/components/ui/card";
+import type {
+	PreviousSessionDelta,
+	SessionMuscleEntry,
+	SessionVsAverage,
+} from "#/lib/hevy/metrics";
 import { setVolume } from "#/lib/hevy/metrics";
 import type { ExerciseTemplate, Workout } from "#/lib/hevy/types";
 import { ExerciseBlock } from "./exercise-block";
+import { SessionMuscleBreakdown } from "./session-muscle-breakdown";
 
 type PRRow = {
 	id: number;
@@ -16,10 +22,28 @@ type PRRow = {
 	reps: number;
 };
 
+interface SessionInsights {
+	deltas: Record<string, PreviousSessionDelta>;
+	breakdown: SessionMuscleEntry[];
+	summary: SessionVsAverage | null;
+}
+
 interface Props {
 	workout: Workout;
 	templates: ExerciseTemplate[];
 	prs: PRRow[];
+	sessionInsights?: SessionInsights;
+}
+
+function signedPct(pct: number): string {
+	const sign = pct > 0 ? "+" : "";
+	return `${sign}${pct.toFixed(0)}%`;
+}
+
+function pctTone(pct: number): string {
+	if (pct > 0.5) return "bg-chart-3/15 text-chart-3";
+	if (pct < -0.5) return "bg-chart-1/15 text-chart-1";
+	return "bg-muted text-muted-foreground";
 }
 
 function formatDate(iso: string): string {
@@ -45,7 +69,12 @@ function formatVolume(kg: number): string {
 	return `${Math.round(kg).toLocaleString()} kg`;
 }
 
-export function WorkoutDetail({ workout, templates, prs }: Props) {
+export function WorkoutDetail({
+	workout,
+	templates,
+	prs,
+	sessionInsights,
+}: Props) {
 	const templateMap = new Map(templates.map((t) => [t.id, t]));
 
 	let totalVolume = 0;
@@ -56,6 +85,9 @@ export function WorkoutDetail({ workout, templates, prs }: Props) {
 			totalSets += 1;
 		}
 	}
+
+	const summary = sessionInsights?.summary ?? null;
+	const showSummary = !!summary && summary.baselineCount > 0;
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -71,8 +103,34 @@ export function WorkoutDetail({ workout, templates, prs }: Props) {
 						<span>{totalSets} sets</span>
 						{totalVolume > 0 && <span>{formatVolume(totalVolume)}</span>}
 					</CardDescription>
+					{showSummary && summary && (
+						<div className="mt-3 flex flex-wrap gap-2">
+							<span
+								className={`rounded-sm px-2 py-0.5 text-xs font-medium tabular-nums ${pctTone(summary.durationPct)}`}
+								title={`Duration vs prior ${summary.baselineCount} sessions`}
+							>
+								Duration {signedPct(summary.durationPct)}
+							</span>
+							<span
+								className={`rounded-sm px-2 py-0.5 text-xs font-medium tabular-nums ${pctTone(summary.volumePct)}`}
+								title={`Volume vs prior ${summary.baselineCount} sessions`}
+							>
+								Volume {signedPct(summary.volumePct)}
+							</span>
+							<span
+								className={`rounded-sm px-2 py-0.5 text-xs font-medium tabular-nums ${pctTone(summary.setsPct)}`}
+								title={`Sets vs prior ${summary.baselineCount} sessions`}
+							>
+								Sets {signedPct(summary.setsPct)}
+							</span>
+						</div>
+					)}
 				</CardHeader>
 			</Card>
+
+			{sessionInsights && sessionInsights.breakdown.length > 0 && (
+				<SessionMuscleBreakdown entries={sessionInsights.breakdown} />
+			)}
 
 			{workout.exercises.map((exercise) => (
 				<ExerciseBlock
@@ -80,6 +138,7 @@ export function WorkoutDetail({ workout, templates, prs }: Props) {
 					exercise={exercise}
 					template={templateMap.get(exercise.exercise_template_id)}
 					prs={prs}
+					delta={sessionInsights?.deltas[exercise.exercise_template_id]}
 				/>
 			))}
 		</div>

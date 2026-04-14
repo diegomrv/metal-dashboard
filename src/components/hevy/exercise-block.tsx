@@ -1,5 +1,6 @@
 import { Badge } from "#/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
+import type { PreviousSessionDelta } from "#/lib/hevy/metrics";
 import { estimated1RM } from "#/lib/hevy/metrics";
 import type {
 	ExerciseTemplate,
@@ -19,6 +20,17 @@ interface Props {
 	exercise: WorkoutExercise;
 	template: ExerciseTemplate | undefined;
 	prs: PRRow[];
+	delta?: PreviousSessionDelta;
+}
+
+function signTone(v: number): string {
+	if (v > 0) return "bg-chart-3/15 text-chart-3";
+	if (v < 0) return "bg-chart-1/15 text-chart-1";
+	return "bg-muted text-muted-foreground";
+}
+
+function signed(n: number): string {
+	return n > 0 ? `+${n}` : `${n}`;
 }
 
 const MUSCLE_LABELS: Record<string, string> = {
@@ -78,11 +90,13 @@ function isPRSet(set: WorkoutSet, exerciseTemplateId: string, prs: PRRow[]) {
 	);
 }
 
-export function ExerciseBlock({ exercise, template, prs }: Props) {
+export function ExerciseBlock({ exercise, template, prs, delta }: Props) {
 	const muscle = template
 		? (MUSCLE_LABELS[template.primary_muscle_group] ??
 			template.primary_muscle_group)
 		: null;
+
+	const showDelta = !!delta && delta.previousWorkoutId != null;
 
 	return (
 		<Card>
@@ -93,6 +107,28 @@ export function ExerciseBlock({ exercise, template, prs }: Props) {
 					</CardTitle>
 					{muscle && <Badge variant="secondary">{muscle}</Badge>}
 				</div>
+				{showDelta && delta && (
+					<div className="flex flex-wrap gap-1.5 pt-1">
+						<span
+							className={`rounded-sm px-2 py-0.5 text-xs font-medium tabular-nums ${signTone(delta.volumeDelta)}`}
+							title={`vs ${delta.previousDate}`}
+						>
+							Δ vol {signed(Math.round(delta.volumeDelta))}
+						</span>
+						<span
+							className={`rounded-sm px-2 py-0.5 text-xs font-medium tabular-nums ${signTone(delta.topE1rmDelta)}`}
+							title={`vs ${delta.previousDate}`}
+						>
+							Δ top e1RM {signed(Math.round(delta.topE1rmDelta * 10) / 10)}
+						</span>
+						<span
+							className={`rounded-sm px-2 py-0.5 text-xs font-medium tabular-nums ${signTone(delta.setCountDelta)}`}
+							title={`vs ${delta.previousDate}`}
+						>
+							Δ sets {signed(delta.setCountDelta)}
+						</span>
+					</div>
+				)}
 				{exercise.notes && (
 					<p className="text-sm italic text-muted-foreground">
 						{exercise.notes}

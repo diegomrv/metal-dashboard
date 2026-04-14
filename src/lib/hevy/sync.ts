@@ -13,7 +13,13 @@ import {
 	fetchAllWorkouts,
 	fetchWorkoutEvents,
 } from "./api";
-import { estimated1RM, setVolume } from "./metrics";
+import {
+	estimated1RM,
+	previousSessionDeltas,
+	sessionMuscleBreakdown,
+	sessionVsAverage,
+	setVolume,
+} from "./metrics";
 import { computePRsFromWorkouts, findNewPRs } from "./pr";
 import type { ExerciseTemplate, Workout } from "./types";
 
@@ -402,31 +408,36 @@ export const getStoredData = createServerFn({ method: "GET" })
 export const getWorkoutById = createServerFn({ method: "GET" })
 	.inputValidator((input: { userId: string; hevyId: string }) => input)
 	.handler(async ({ data }) => {
-		const [workoutRow, templateRows, prRows] = await Promise.all([
-			db
-				.select()
-				.from(hevyWorkouts)
-				.where(
-					and(
-						eq(hevyWorkouts.userId, data.userId),
-						eq(hevyWorkouts.hevyId, data.hevyId),
+		const [workoutRow, templateRows, prRows, allWorkoutRows] =
+			await Promise.all([
+				db
+					.select()
+					.from(hevyWorkouts)
+					.where(
+						and(
+							eq(hevyWorkouts.userId, data.userId),
+							eq(hevyWorkouts.hevyId, data.hevyId),
+						),
+					)
+					.get(),
+				db
+					.select()
+					.from(hevyExerciseTemplates)
+					.where(eq(hevyExerciseTemplates.userId, data.userId)),
+				db
+					.select()
+					.from(hevyPersonalRecords)
+					.where(
+						and(
+							eq(hevyPersonalRecords.userId, data.userId),
+							eq(hevyPersonalRecords.workoutId, data.hevyId),
+						),
 					),
-				)
-				.get(),
-			db
-				.select()
-				.from(hevyExerciseTemplates)
-				.where(eq(hevyExerciseTemplates.userId, data.userId)),
-			db
-				.select()
-				.from(hevyPersonalRecords)
-				.where(
-					and(
-						eq(hevyPersonalRecords.userId, data.userId),
-						eq(hevyPersonalRecords.workoutId, data.hevyId),
-					),
-				),
-		]);
+				db
+					.select({ rawJson: hevyWorkouts.rawJson })
+					.from(hevyWorkouts)
+					.where(eq(hevyWorkouts.userId, data.userId)),
+			]);
 
 		if (!workoutRow) return null;
 
@@ -434,8 +445,23 @@ export const getWorkoutById = createServerFn({ method: "GET" })
 		const templates: ExerciseTemplate[] = templateRows.map(
 			(r) => JSON.parse(r.rawJson) as ExerciseTemplate,
 		);
+		const allWorkouts: Workout[] = allWorkoutRows.map(
+			(r) => JSON.parse(r.rawJson) as Workout,
+		);
 
-		return { workout, templates, prs: prRows };
+		const deltaList = previousSessionDeltas(workout, allWorkouts);
+		const deltas: Record<string, (typeof deltaList)[number]> = {};
+		for (const d of deltaList) deltas[d.templateId] = d;
+
+		const breakdown = sessionMuscleBreakdown(workout, templates);
+		const summary = sessionVsAverage(workout, allWorkouts);
+
+		return {
+			workout,
+			templates,
+			prs: prRows,
+			sessionInsights: { deltas, breakdown, summary },
+		};
 	});
 
 export const getRecentPRs = createServerFn({ method: "GET" })

@@ -11,9 +11,13 @@ import {
 } from "#/components/hevy/dashboard-header";
 import { ExerciseProgression } from "#/components/hevy/exercise-progression";
 import { MuscleDistribution } from "#/components/hevy/muscle-distribution";
+import { MuscleRecovery } from "#/components/hevy/muscle-recovery";
 import { PersonalRecordsFeed } from "#/components/hevy/personal-records-feed";
+import { PlateauList } from "#/components/hevy/plateau-list";
 import { RecentWorkouts } from "#/components/hevy/recent-workouts";
+import { RepRangeDistribution } from "#/components/hevy/rep-range-distribution";
 import { VolumeChart } from "#/components/hevy/volume-chart";
+import { WeeklySetsPerMuscle } from "#/components/hevy/weekly-sets-per-muscle";
 import { WorkoutFrequency } from "#/components/hevy/workout-frequency";
 import {
 	AlertDialog,
@@ -293,7 +297,13 @@ function HevyDashboard() {
 					<div className="grid gap-6 lg:grid-cols-3">
 						<div className="flex flex-col gap-6 lg:col-span-2">
 							<VolumeChart workouts={workouts} />
+							<RepRangeDistribution workouts={workouts} />
 							<ExerciseProgression
+								workouts={workouts}
+								templates={exerciseTemplates}
+							/>
+							<PlateauList workouts={workouts} templates={exerciseTemplates} />
+							<WeeklySetsPerMuscle
 								workouts={workouts}
 								templates={exerciseTemplates}
 							/>
@@ -304,6 +314,10 @@ function HevyDashboard() {
 									templates={exerciseTemplates}
 								/>
 							</div>
+							<MuscleRecovery
+								workouts={workouts}
+								templates={exerciseTemplates}
+							/>
 						</div>
 
 						<aside className="flex flex-col gap-6 lg:col-span-1">

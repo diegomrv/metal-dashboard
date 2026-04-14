@@ -65,9 +65,7 @@ export function RecentWorkouts({ workouts, prCounts }: Props) {
 							className="-mx-2 flex flex-col gap-2 rounded-md px-2 py-3 transition-colors hover:bg-accent/50 sm:flex-row sm:items-center sm:gap-4 lg:flex-col lg:items-stretch lg:gap-2"
 						>
 							<div className="flex min-w-0 flex-1 items-baseline justify-between gap-2 sm:block lg:flex">
-								<p className="min-w-0 flex-1 truncate font-medium">
-									{w.title}
-								</p>
+								<p className="min-w-0 flex-1 truncate font-medium">{w.title}</p>
 								<p className="shrink-0 text-xs text-muted-foreground">
 									{formatDate(w.date)}
 								</p>
