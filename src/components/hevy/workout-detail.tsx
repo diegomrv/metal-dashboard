@@ -41,8 +41,8 @@ function signedPct(pct: number): string {
 }
 
 function pctTone(pct: number): string {
-	if (pct > 0.5) return "bg-chart-3/15 text-chart-3";
-	if (pct < -0.5) return "bg-chart-1/15 text-chart-1";
+	if (pct > 0.5) return "bg-success/15 text-success";
+	if (pct < -0.5) return "bg-destructive/15 text-destructive";
 	return "bg-muted text-muted-foreground";
 }
 

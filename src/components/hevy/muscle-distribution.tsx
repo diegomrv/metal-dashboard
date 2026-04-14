@@ -13,23 +13,13 @@ import {
 	ChartTooltipContent,
 } from "#/components/ui/chart";
 import { muscleDistribution } from "#/lib/hevy/metrics";
+import { muscleColor } from "#/lib/hevy/muscle-colors";
 import type { ExerciseTemplate, Workout } from "#/lib/hevy/types";
 
 interface Props {
 	workouts: Workout[];
 	templates: ExerciseTemplate[];
 }
-
-const COLORS = [
-	"var(--chart-1)",
-	"var(--chart-2)",
-	"var(--chart-3)",
-	"var(--chart-4)",
-	"var(--chart-5)",
-	"oklch(0.7 0.15 200)",
-	"oklch(0.65 0.2 320)",
-	"oklch(0.75 0.12 120)",
-];
 
 export function MuscleDistribution({ workouts, templates }: Props) {
 	const data = muscleDistribution(workouts, templates);
@@ -38,7 +28,7 @@ export function MuscleDistribution({ workouts, templates }: Props) {
 	const chartConfig = data.reduce<ChartConfig>((acc, entry, i) => {
 		acc[entry.muscle] = {
 			label: entry.label,
-			color: COLORS[i % COLORS.length],
+			color: muscleColor(entry.muscle, i),
 		};
 		return acc;
 	}, {});
@@ -66,7 +56,7 @@ export function MuscleDistribution({ workouts, templates }: Props) {
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
-				<div className="flex flex-col items-center gap-4 sm:flex-row">
+				<div className="flex flex-col items-center gap-6">
 					<ChartContainer
 						config={chartConfig}
 						className="h-56 w-56 flex-shrink-0"
@@ -92,18 +82,21 @@ export function MuscleDistribution({ workouts, templates }: Props) {
 								stroke="var(--background)"
 							>
 								{data.map((entry, i) => (
-									<Cell key={entry.muscle} fill={COLORS[i % COLORS.length]} />
+									<Cell
+										key={entry.muscle}
+										fill={muscleColor(entry.muscle, i)}
+									/>
 								))}
 							</Pie>
 						</PieChart>
 					</ChartContainer>
-					<div className="grid w-full grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+					<div className="grid w-full grid-cols-1 gap-x-4 gap-y-1.5 text-sm sm:grid-cols-2">
 						{data.slice(0, 10).map((entry, i) => (
 							<div key={entry.muscle} className="flex items-center gap-2">
 								<span
 									className="h-2.5 w-2.5 shrink-0 rounded-sm"
 									style={{
-										backgroundColor: COLORS[i % COLORS.length],
+										backgroundColor: muscleColor(entry.muscle, i),
 									}}
 								/>
 								<span className="truncate text-muted-foreground">

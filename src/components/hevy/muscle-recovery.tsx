@@ -49,8 +49,8 @@ export function MuscleRecovery({ workouts, templates }: Props) {
 											never
 												? "bg-muted-foreground/40"
 												: stale
-													? "bg-chart-1"
-													: "bg-chart-3"
+													? "bg-destructive"
+													: "bg-success"
 										}`}
 									/>
 									<span className="truncate text-muted-foreground">

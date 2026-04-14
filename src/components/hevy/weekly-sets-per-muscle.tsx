@@ -29,6 +29,7 @@ import {
 	DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
 import { MUSCLE_LABELS, weeklySetsPerMuscle } from "#/lib/hevy/metrics";
+import { MUSCLE_COLORS } from "#/lib/hevy/muscle-colors";
 import type { ExerciseTemplate, MuscleGroup, Workout } from "#/lib/hevy/types";
 
 interface Props {
@@ -47,26 +48,6 @@ const DEFAULT_MUSCLES: MuscleGroup[] = [
 	"biceps",
 	"triceps",
 ];
-
-const COLORS: Record<string, string> = {
-	chest: "var(--chart-1)",
-	upper_back: "var(--chart-2)",
-	lats: "var(--chart-3)",
-	shoulders: "var(--chart-4)",
-	quadriceps: "var(--chart-5)",
-	hamstrings: "oklch(0.7 0.15 200)",
-	glutes: "oklch(0.65 0.2 320)",
-	biceps: "oklch(0.75 0.12 120)",
-	triceps: "oklch(0.7 0.14 60)",
-	calves: "oklch(0.65 0.1 280)",
-	abdominals: "oklch(0.68 0.13 160)",
-	forearms: "oklch(0.7 0.1 40)",
-	traps: "oklch(0.62 0.14 240)",
-	lower_back: "oklch(0.66 0.12 100)",
-	abductors: "oklch(0.7 0.1 350)",
-	adductors: "oklch(0.68 0.1 20)",
-	neck: "oklch(0.6 0.1 180)",
-};
 
 const SELECTABLE = (Object.keys(MUSCLE_LABELS) as MuscleGroup[]).filter(
 	(m) => m !== "cardio" && m !== "full_body" && m !== "other",
@@ -88,9 +69,14 @@ export function WeeklySetsPerMuscle({ workouts, templates }: Props) {
 	const chartData = useMemo(
 		() =>
 			weekly.map((w) => {
+				const start = new Date(`${w.week}T00:00:00`);
+				const end = new Date(start.getTime() + 6 * 24 * 60 * 60 * 1000);
+				const fmt = (d: Date) =>
+					d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 				const row: Record<string, number | string> = {
 					week: w.week,
 					label: w.label,
+					range: `${fmt(start)} – ${fmt(end)}`,
 				};
 				for (const m of activeMuscles) {
 					row[m] = Math.round(w.sets[m] * 10) / 10;
@@ -105,7 +91,7 @@ export function WeeklySetsPerMuscle({ workouts, templates }: Props) {
 		for (const m of activeMuscles) {
 			cfg[m] = {
 				label: MUSCLE_LABELS[m],
-				color: COLORS[m] ?? "var(--chart-1)",
+				color: MUSCLE_COLORS[m] ?? "var(--chart-1)",
 			};
 		}
 		return cfg;
@@ -166,7 +152,15 @@ export function WeeklySetsPerMuscle({ workouts, templates }: Props) {
 							width={28}
 							allowDecimals={false}
 						/>
-						<ChartTooltip content={<ChartTooltipContent />} />
+						<ChartTooltip
+							content={
+								<ChartTooltipContent
+									labelFormatter={(_, payload) =>
+										(payload?.[0]?.payload?.range as string) ?? ""
+									}
+								/>
+							}
+						/>
 						{singleMode && (
 							<>
 								<ReferenceLine

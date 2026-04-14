@@ -6,6 +6,7 @@ import {
 	CardTitle,
 } from "#/components/ui/card";
 import type { SessionMuscleEntry } from "#/lib/hevy/metrics";
+import { muscleColor } from "#/lib/hevy/muscle-colors";
 
 interface Props {
 	entries: SessionMuscleEntry[];
@@ -32,8 +33,11 @@ export function SessionMuscleBreakdown({ entries }: Props) {
 								</span>
 								<div className="relative h-2 flex-1 overflow-hidden rounded-sm bg-muted">
 									<div
-										className="absolute inset-y-0 left-0 bg-chart-1"
-										style={{ width: `${pct}%` }}
+										className="absolute inset-y-0 left-0"
+										style={{
+											width: `${pct}%`,
+											backgroundColor: muscleColor(e.muscle),
+										}}
 									/>
 								</div>
 								<span className="w-10 shrink-0 text-right text-xs tabular-nums text-muted-foreground">

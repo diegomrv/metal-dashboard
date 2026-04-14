@@ -30,13 +30,19 @@ export function WorkoutFrequency({ workouts }: Props) {
 	const data = weeklyFrequency(workouts, 12);
 
 	return (
-		<Card className="rise-in" style={{ animationDelay: "120ms" }}>
+		<Card
+			className="rise-in flex flex-col"
+			style={{ animationDelay: "120ms" }}
+		>
 			<CardHeader>
 				<CardTitle>Workout Frequency</CardTitle>
 				<CardDescription>Workouts per week (last 12 weeks)</CardDescription>
 			</CardHeader>
-			<CardContent>
-				<ChartContainer config={chartConfig} className="h-64 w-full">
+			<CardContent className="flex-1">
+				<ChartContainer
+					config={chartConfig}
+					className="h-full min-h-64 w-full"
+				>
 					<BarChart data={data} accessibilityLayer>
 						<CartesianGrid vertical={false} />
 						<XAxis
